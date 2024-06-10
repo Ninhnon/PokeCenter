@@ -1,4 +1,4 @@
-package com.example.pokecenter.vender.Model.VenderOrder;
+package com.example.pokecenter.customer.lam.StateClass;
 
 import android.content.Context;
 import android.os.Handler;
@@ -6,7 +6,7 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -16,36 +16,35 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.pokecenter.R;
-import com.example.pokecenter.customer.lam.Interface.OrderState;
-import com.example.pokecenter.customer.lam.Model.order.Order;
+import com.example.pokecenter.customer.lam.API.FirebaseSupportCustomer;
+import com.example.pokecenter.customer.lam.Interface.OrderRecyclerViewInterface;
 import com.example.pokecenter.customer.lam.Model.product.Product;
 import com.example.pokecenter.customer.lam.Provider.ProductData;
-import com.example.pokecenter.customer.lam.StateClass.CompletedState;
-import com.example.pokecenter.customer.lam.StateClass.OrderPlacedState;
-import com.example.pokecenter.customer.lam.StateClass.PackagedState;
-import com.example.pokecenter.customer.lam.StateClass.DeliveredState;
-import com.example.pokecenter.vender.API.FirebaseSupportVender;
 
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapter.ReceiveOrderViewHolder> {
+public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHolder> {
 
     private Context mContext;
     private List<Order> mOrders;
+    private OrderRecyclerViewInterface orderRecyclerViewInterface;
 
     NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
     SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy 'at' HH:mm");
 
-    public ReceiveOrderAdapter(Context context, List<Order> orders) {
+    public OrderAdapter(Context context, List<Order> orders, OrderRecyclerViewInterface orderRecyclerViewInterface) {
         this.mContext = context;
         this.mOrders = orders;
+        this.orderRecyclerViewInterface = orderRecyclerViewInterface;
     }
 
     public void setData(List<Order> orders) {
@@ -55,21 +54,20 @@ public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapte
 
     @NonNull
     @Override
-    public ReceiveOrderViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.lam_receive_order_vender_item, parent, false);
-        return new ReceiveOrderViewHolder(view);
+    public OrderViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.lam_expandable_order_item, parent, false);
+        return new OrderViewHolder(view, orderRecyclerViewInterface);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ReceiveOrderViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull OrderViewHolder holder, int position) {
         Order order = mOrders.get(position);
 
         holder.totalAmount.setText(currencyFormatter.format(order.getTotalAmount()));
 
         holder.createDateTime.setText("Created: " + order.getCreateDateTimeString());
-        holder.name.setText("Customer Name: " + order.getCustomerName());
-        holder.phoneNumber.setText("Phone Number: " + order.getCustomerPhoneNumber());
-        holder.address.setText("Address: " + order.getDeliveryAddress());
+
+        holder.orderStatus.setText(order.getState().getStatus());
 
         holder.listOrders.removeAllViews();
         order.getOrdersDetail().forEach(detailOrder -> {
@@ -95,18 +93,31 @@ public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapte
             quantity.setText(String.valueOf(detailOrder.getQuantity()));
             price.setText(currencyFormatter.format(product.getOptions().get(detailOrder.getSelectedOption()).getPrice()));
 
-            detailItemView.setPadding(0, 0, 0, 24);
+            detailItemView.setPadding(0, 0, 0, 20);
 
             holder.listOrders.addView(detailItemView);
 
         });
 
-        if (order.getState().getStatus().contains("Packaged")) {
-            holder.packaged.setVisibility(View.GONE);
+        holder.arrowIcon.setImageDrawable(mContext.getDrawable(R.drawable.lam_round_keyboard_arrow_down_24));
+        holder.expandableLayout.setVisibility(View.GONE);
+
+
+        if (order.getState().getStatus().equals("Delivered")) {
+            holder.operations.setVisibility(View.VISIBLE);
+
+            holder.orderStatus.setText(order.getState().getStatus() + " - " + dateFormat.format(order.getDeliveryDate()));
+
+            LocalDate localDate = order.getDeliveryDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            holder.informText.setText("Please submit the refund request by " + localDate.plusDays(6).format(formatter));
+
+        } else {
+            holder.operations.setVisibility(View.GONE);
+            holder.orderStatus.setText(order.getState().getStatus());
         }
-        if (order.getState().getStatus().contains("Delivery completed")) {
-            holder.packaged.setVisibility(View.GONE);
-        }
+
+
 
     }
 
@@ -118,44 +129,59 @@ public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapte
         return 0;
     }
 
-    public class ReceiveOrderViewHolder extends RecyclerView.ViewHolder {
+    public class OrderViewHolder extends RecyclerView.ViewHolder {
 
         private TextView totalAmount;
         private TextView createDateTime;
-        private TextView name;
-        private TextView phoneNumber;
-        private TextView address;
-
-
+        private TextView orderStatus;
+        private ImageView arrowIcon;
         private LinearLayout expandableLayout;
         private LinearLayout listOrders;
 
-        private Button packaged;
+        private LinearLayout operations;
+        private TextView informText;
+
+        private TextView contactVender;
+        private TextView requestRefund;
+        private TextView confirmReceived;
 
         private ProgressBar progressBar;
 
 
-        public ReceiveOrderViewHolder(@NonNull View itemView) {
+        public OrderViewHolder(@NonNull View itemView, OrderRecyclerViewInterface orderRecyclerViewInterface) {
             super(itemView);
 
             totalAmount = itemView.findViewById(R.id.total_amount);
             createDateTime = itemView.findViewById(R.id.createDateTime);
-            name = itemView.findViewById(R.id.name);
-            phoneNumber = itemView.findViewById(R.id.phoneNumber);
-            address = itemView.findViewById(R.id.address);
+            orderStatus = itemView.findViewById(R.id.order_status);
+
+            arrowIcon = itemView.findViewById(R.id.icon);
 
             expandableLayout = itemView.findViewById(R.id.expandable_part);
             listOrders = itemView.findViewById(R.id.list_orders);
 
-            packaged = itemView.findViewById(R.id.packedOrder);
+            operations = itemView.findViewById(R.id.operations);
+            informText = itemView.findViewById(R.id.inform_text);
+
+            contactVender = itemView.findViewById(R.id.contact_vender);
+            requestRefund = itemView.findViewById(R.id.request_refund);;
+            confirmReceived = itemView.findViewById(R.id.confirm_received);
 
             progressBar = itemView.findViewById(R.id.progress_bar);
 
+            contactVender.setOnClickListener(view -> {
+                int pos = getAbsoluteAdapterPosition();
+                orderRecyclerViewInterface.onContactSellerClick(pos);
+            });
 
+            requestRefund.setOnClickListener(view -> {
+                int pos = getAbsoluteAdapterPosition();
+                orderRecyclerViewInterface.onRequestRefundClick(pos);
+            });
 
-            packaged.setOnClickListener(view -> {
+            confirmReceived.setOnClickListener(view -> {
 
-                packaged.setVisibility(View.GONE);
+                confirmReceived.setVisibility(View.GONE);
                 progressBar.setVisibility(View.VISIBLE);
 
                 int pos = getAbsoluteAdapterPosition();
@@ -164,52 +190,33 @@ public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapte
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 Handler handler = new Handler(Looper.getMainLooper());
 
-                String newStatus = "Packaged - " + dateFormat.format(new Date());
-
                 executor.execute(() -> {
 
                     boolean isSuccess = true;
 
                     try {
-                        new FirebaseSupportVender().changeOrderStatus(order.getId(), newStatus);
-                        new FirebaseSupportVender().pushNotificationForPackaged(order.getId());
-
+                        new FirebaseSupportCustomer().ConfirmReceived(order.getId());
                     } catch (IOException e) {
                         isSuccess = false;
                     }
-                    OrderState state;
 
-                    if(newStatus.contains("Packaged"))
-                        state = new PackagedState();
-                    else if(newStatus.contains("Delivery completed"))
-                        state= new CompletedState();
-                    else if(newStatus.contains("Received"))
-                        state = new DeliveredState();
-                    else
-                        state=new OrderPlacedState();
                     boolean finalIsSuccess = isSuccess;
                     handler.post(() -> {
+
                         if (finalIsSuccess) {
 
-                            order.setState(state);
+                            operations.setVisibility(View.GONE);
+                            order.setState(new CompletedState());
 
-                            mOrders.remove(pos);
-                            notifyItemRemoved(pos);
+                            notifyItemChanged(pos);
 
-                            Toast.makeText(mContext, "Order status changed", Toast.LENGTH_SHORT)
-                                    .show();
-
-                            progressBar.setVisibility(View.GONE);
+                            Toast.makeText(mContext, "Thanks for choosing us!", Toast.LENGTH_SHORT).show();
 
                         } else {
-
-                            packaged.setVisibility(View.VISIBLE);
-                            progressBar.setVisibility(View.GONE);
-
-                            Toast.makeText(mContext, "Failed to connect server!", Toast.LENGTH_SHORT)
-                                    .show();
-
+                            confirmReceived.setVisibility(View.VISIBLE);
                         }
+
+                        progressBar.setVisibility(View.GONE);
                     });
                 });
             });
@@ -220,13 +227,14 @@ public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapte
                 Order order = mOrders.get(pos);
                 order.toggleExpand();
                 if (order.isExpand()) {
+                    arrowIcon.setImageDrawable(mContext.getDrawable(R.drawable.lam_round_keyboard_arrow_up_24));
                     expandableLayout.setVisibility(View.VISIBLE);
                 } else {
+                    arrowIcon.setImageDrawable(mContext.getDrawable(R.drawable.lam_round_keyboard_arrow_down_24));
                     expandableLayout.setVisibility(View.GONE);
                 }
 
             });
         }
     }
-
 }

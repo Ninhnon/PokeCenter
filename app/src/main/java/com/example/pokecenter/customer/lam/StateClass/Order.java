@@ -1,6 +1,7 @@
-package com.example.pokecenter.customer.lam.Model.order;
+package com.example.pokecenter.customer.lam.StateClass;
 
 import com.example.pokecenter.customer.lam.Interface.OrderState;
+import com.example.pokecenter.customer.lam.Model.order.DetailOrder;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
