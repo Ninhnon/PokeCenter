@@ -16,14 +16,9 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.pokecenter.R;
-import com.example.pokecenter.customer.lam.Interface.OrderState;
 import com.example.pokecenter.customer.lam.Model.order.Order;
 import com.example.pokecenter.customer.lam.Model.product.Product;
 import com.example.pokecenter.customer.lam.Provider.ProductData;
-import com.example.pokecenter.customer.lam.StateClass.CompletedState;
-import com.example.pokecenter.customer.lam.StateClass.OrderPlacedState;
-import com.example.pokecenter.customer.lam.StateClass.PackagedState;
-import com.example.pokecenter.customer.lam.StateClass.DeliveredState;
 import com.example.pokecenter.vender.API.FirebaseSupportVender;
 
 import java.io.IOException;
@@ -101,10 +96,10 @@ public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapte
 
         });
 
-        if (order.getState().getStatus().contains("Packaged")) {
+        if (order.getStatus().contains("Packaged")) {
             holder.packaged.setVisibility(View.GONE);
         }
-        if (order.getState().getStatus().contains("Delivery completed")) {
+        if (order.getStatus().contains("Delivery completed")) {
             holder.packaged.setVisibility(View.GONE);
         }
 
@@ -171,27 +166,18 @@ public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapte
                     boolean isSuccess = true;
 
                     try {
-                        new FirebaseSupportVender().changeOrderStatus(order.getId(), newStatus);
+                        new FirebaseSupportVender().ChangeOrderStatus(order.getId(), newStatus);
                         new FirebaseSupportVender().pushNotificationForPackaged(order.getId());
 
                     } catch (IOException e) {
                         isSuccess = false;
                     }
-                    OrderState state;
 
-                    if(newStatus.contains("Packaged"))
-                        state = new PackagedState();
-                    else if(newStatus.contains("Delivery completed"))
-                        state= new CompletedState();
-                    else if(newStatus.contains("Received"))
-                        state = new DeliveredState();
-                    else
-                        state=new OrderPlacedState();
                     boolean finalIsSuccess = isSuccess;
                     handler.post(() -> {
                         if (finalIsSuccess) {
 
-                            order.setState(state);
+                            order.setStatus(newStatus);
 
                             mOrders.remove(pos);
                             notifyItemRemoved(pos);

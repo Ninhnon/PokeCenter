@@ -1,4 +1,4 @@
-package com.example.pokecenter.customer.lam.StateClass;
+package com.example.pokecenter.customer.lam.State;
 
 import com.example.pokecenter.customer.lam.Interface.OrderState;
 

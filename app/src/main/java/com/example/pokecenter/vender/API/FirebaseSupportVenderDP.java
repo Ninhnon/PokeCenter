@@ -5,11 +5,16 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.example.pokecenter.admin.AdminTab.Utils.DateUtils;
+import com.example.pokecenter.customer.lam.Interface.OrderState;
 import com.example.pokecenter.customer.lam.Model.account.Account;
 import com.example.pokecenter.customer.lam.Model.option.Option;
 import com.example.pokecenter.customer.lam.Model.order.DetailOrder;
-import com.example.pokecenter.customer.lam.Model.order.Order;
+import com.example.pokecenter.customer.lam.State.Order;
 import com.example.pokecenter.customer.lam.Model.product.Product;
+import com.example.pokecenter.customer.lam.State.CompletedState;
+import com.example.pokecenter.customer.lam.State.OrderPlacedState;
+import com.example.pokecenter.customer.lam.State.PackagedState;
+import com.example.pokecenter.customer.lam.State.DeliveredState;
 import com.example.pokecenter.vender.Model.Notification.NotificationData;
 import com.example.pokecenter.vender.Model.Notification.PushNotification;
 import com.example.pokecenter.vender.Model.Notification.RetrofitInstance;
@@ -53,7 +58,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 
 
-public class FirebaseSupportVender {
+public class FirebaseSupportVenderDP {
 
     private String urlDb = "https://pokecenter-ae954-default-rtdb.firebaseio.com/";
     private final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
@@ -755,13 +760,23 @@ public class FirebaseSupportVender {
                             });
 
                             Order order = null;
+                            OrderState state;
+
+                            if(status.contains("Packaged"))
+                                state = new PackagedState();
+                            else if(status.contains("Delivery completed"))
+                                state= new CompletedState();
+                            else if(status.contains("Received"))
+                                state = new DeliveredState();
+                            else
+                                state=new OrderPlacedState();
                             try {
                                 order = new Order(
                                         key,
                                         ((Double) value.get("totalAmount")).intValue(),
                                         outputFormat.parse((String) value.get("createDate")),
                                         details,
-                                        (String) value.get("status")
+                                        state
                                 );
                             } catch (java.text.ParseException e) {
                                 throw new RuntimeException(e);
@@ -790,7 +805,7 @@ public class FirebaseSupportVender {
                             fetchedOrders.add(order);
 
                             if (counter.decrementAndGet() == 0) {
-                                fetchedOrders.removeIf(o -> !o.getStatus().contains(status));
+                                fetchedOrders.removeIf(o -> !o.getState().getStatus().contains(status));
                                 fetchedOrders.sort(Comparator.comparing(Order::getCreateDateTime));
                                 fetchOrdersFuture.complete(null); // Notify the future that orders are fetched
                             }
@@ -816,21 +831,20 @@ public class FirebaseSupportVender {
     }
 
 
-    public void ChangeOrderStatus(String orderId, String status) throws IOException {
-        OkHttpClient client = new OkHttpClient();
+    public void changeOrderStatus(String orderId, String newStatus) throws IOException {
 
+        OkHttpClient client = new OkHttpClient();
         Map<String, Object> patchData = new HashMap<>();
-        patchData.put("status", status);
+        patchData.put("status", newStatus);
 
         String jsonData = new Gson().toJson(patchData);
         RequestBody body = RequestBody.create(jsonData, JSON);
-
         Request request = new Request.Builder()
                 .url(urlDb + "orders/" + orderId + ".json")
                 .patch(body)
                 .build();
 
-        Response response = client.newCall(request).execute();
+        client.newCall(request).execute();
     }
 
 

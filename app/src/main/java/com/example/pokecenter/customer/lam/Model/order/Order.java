@@ -1,51 +1,33 @@
 package com.example.pokecenter.customer.lam.Model.order;
 
-import com.example.pokecenter.customer.lam.Interface.OrderState;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-import okhttp3.MediaType;
-
 public class Order {
     private String id;
+
     private int totalAmount;
     private Date createDateTime;
     private List<DetailOrder> ordersDetail;
+    private String status;
     private Date deliveryDate;
     private boolean isExpand;
+
     private String customerName;
     private String customerPhoneNumber;
     private String deliveryAddress;
-    private String urlDb = "https://pokecenter-ae954-default-rtdb.firebaseio.com/";
-    private final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-    private OrderState state;
 
-    public void changeState(OrderState newState) {
-        this.state = newState;
-        this.state.setOrder(this);
-    }
 
-    public void updateState() {
-        this.state.updateState(this);
-    }
-    public Order(String id, int totalAmount, Date createDateTime, List<DetailOrder> ordersDetail, OrderState state) {
+    public Order(String id, int totalAmount, Date createDateTime, List<DetailOrder> ordersDetail, String status) {
         this.id = id;
         this.totalAmount = totalAmount;
         this.createDateTime = createDateTime;
         this.ordersDetail = ordersDetail;
-        this.state = state;
-        this.state.setOrder(this); // initial state
-        this.isExpand = false;
+        this.status = status;
+        isExpand = false;
     }
 
-    public void setState(OrderState state) {
-        this.state = state;
-    }
-    public OrderState getState(){
-        return state;
-    }
     public String getId() {
         return id;
     }
@@ -96,13 +78,13 @@ public class Order {
         isExpand = !isExpand;
     }
 
-//    public String getStatus() {
-//        return status;
-//    }
-//
-//    public void setStatus(String status) {
-//        this.status = status;
-//    }
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
     public Date getDeliveryDate() {
         return deliveryDate;

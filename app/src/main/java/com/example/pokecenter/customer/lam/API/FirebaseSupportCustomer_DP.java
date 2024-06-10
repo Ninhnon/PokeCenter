@@ -1,15 +1,13 @@
 package com.example.pokecenter.customer.lam.API;
 
-import android.net.Uri;
-
 import com.example.pokecenter.customer.lam.CustomerTab.Profile.NextActivity.MyAddressesActivity;
+import com.example.pokecenter.customer.lam.Interface.OrderState;
 import com.example.pokecenter.customer.lam.Model.address.Address;
 import com.example.pokecenter.customer.lam.Model.cart.Cart;
 import com.example.pokecenter.customer.lam.Model.checkout_item.CheckoutItem;
 import com.example.pokecenter.customer.lam.Model.notification.Notification;
 import com.example.pokecenter.customer.lam.Model.option.Option;
 import com.example.pokecenter.customer.lam.Model.order.DetailOrder;
-import com.example.pokecenter.customer.lam.Model.order.Order;
 import com.example.pokecenter.customer.lam.Model.product.Product;
 import com.example.pokecenter.customer.lam.Model.purchasedProduct.PurchasedProduct;
 import com.example.pokecenter.customer.lam.Model.review_product.ReviewProduct;
@@ -17,13 +15,16 @@ import com.example.pokecenter.customer.lam.Model.vender.Vender;
 import com.example.pokecenter.customer.lam.Model.voucher.VoucherInfo;
 import com.example.pokecenter.customer.lam.Provider.FollowData;
 import com.example.pokecenter.customer.lam.Provider.ProductData;
+import com.example.pokecenter.customer.lam.State.Order;
+import com.example.pokecenter.customer.lam.State.CompletedState;
+import com.example.pokecenter.customer.lam.State.OrderPlacedState;
+import com.example.pokecenter.customer.lam.State.PackagedState;
+import com.example.pokecenter.customer.lam.State.DeliveredState;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -47,7 +47,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class FirebaseSupportCustomer {
+public class FirebaseSupportCustomer_DP {
     private String urlDb = "https://pokecenter-ae954-default-rtdb.firebaseio.com/";
     private final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -885,47 +885,35 @@ public class FirebaseSupportCustomer {
 
     SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy 'at' HH:mm");
     public boolean saveOrders(List<CheckoutItem> checkoutItemList) {
-
         AtomicBoolean isSuccess = new AtomicBoolean(true);
-
         Map<String, Boolean> vendersId = new HashMap<>();
         Map<String, Map<String, Object>> purchasedProducts = new HashMap<>();
         checkoutItemList.forEach(item -> {
-
             vendersId.put(item.getVenderId(), true);
-
             Map<String, Object> value = new HashMap<>();
             value.put("reviewed", false);
             value.put("selectedOption", item.getSelectedOption());
             value.put("purchasedDate", outputFormat.format(new Date()));
             purchasedProducts.put(item.getProductId(), value);
-
         });
 
         vendersId.keySet().forEach(key -> {
-
             int totalAmount = 0;
             List<Map<String, Object>> filterList = new ArrayList<>();
             for (int i = 0; i < checkoutItemList.size(); ++i) {
                 if (checkoutItemList.get(i).getVenderId().equals(key)) {
-
                     CheckoutItem item = checkoutItemList.get(i);
-
                     Map<String, Object> orderDetail = new HashMap<>();
                     orderDetail.put("productId", item.getProductId());
                     orderDetail.put("selectedOption", item.getSelectedOption());
                     orderDetail.put("quantity", item.getQuantity());
-
                     filterList.add(orderDetail);
                     totalAmount += checkoutItemList.get(i).getPrice() * checkoutItemList.get(i).getQuantity();
                 }
             }
 
             OkHttpClient client = new OkHttpClient();
-
             Map<String, Object> postData = new HashMap<>();
-
-
             postData.put("createDate", outputFormat.format(new Date()));
             postData.put("totalAmount", totalAmount);
 
@@ -937,9 +925,7 @@ public class FirebaseSupportCustomer {
             postData.put("deliveryDate", "");
 
             String jsonData = new Gson().toJson(postData);
-
             RequestBody body = RequestBody.create(jsonData, JSON);
-
             Request request = new Request.Builder()
                     .url(urlDb + "orders.json")
                     .post(body)
@@ -952,7 +938,6 @@ public class FirebaseSupportCustomer {
                 return;
             }
 
-            // Update Product property
             filterList.forEach(item -> {
                 String productId = (String) item.get("productId");
                 int selectedOption = (int) item.get("selectedOption");
@@ -966,7 +951,6 @@ public class FirebaseSupportCustomer {
 
                 String jsonPatchData = new Gson().toJson(patchData);
                 RequestBody patchBody = RequestBody.create(jsonPatchData, JSON);
-
                 Request patchRequest = new Request.Builder()
                         .url(urlDb + "products/" + productId + "/options/" + option.getOptionName() + ".json")
                         .patch(patchBody)
@@ -979,13 +963,11 @@ public class FirebaseSupportCustomer {
                     return;
                 }
             });
-
         });
 
         try {
             updateListProductReviews(purchasedProducts);
         } catch (IOException e) {
-
         }
 
         return isSuccess.get();
@@ -1053,13 +1035,24 @@ public class FirebaseSupportCustomer {
                 });
 
                 Order order = null;
+                String status =(String) value.get("status");
+                OrderState state;
+
+                if(status.contains("Packaged"))
+                    state = new PackagedState();
+                else if(status.contains("Delivery completed"))
+                    state= new CompletedState();
+                else if(status.contains("Received"))
+                    state = new DeliveredState();
+                else
+                    state=new OrderPlacedState();
                 try {
                     order = new Order(
                             key,
                             ((Double) value.get("totalAmount")).intValue(),
                             outputFormat.parse((String) value.get("createDate")),
                             details,
-                            (String) value.get("status")
+                            state
                     );
                 } catch (ParseException e) {
 
