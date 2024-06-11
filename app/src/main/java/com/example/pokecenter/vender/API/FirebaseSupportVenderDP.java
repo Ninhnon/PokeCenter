@@ -5,11 +5,16 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.example.pokecenter.admin.AdminTab.Utils.DateUtils;
+import com.example.pokecenter.customer.lam.Interface.OrderState;
 import com.example.pokecenter.customer.lam.Model.account.Account;
 import com.example.pokecenter.customer.lam.Model.option.Option;
 import com.example.pokecenter.customer.lam.Model.order.DetailOrder;
-import com.example.pokecenter.customer.lam.Model.order.Order;
+import com.example.pokecenter.customer.lam.State.Order;
 import com.example.pokecenter.customer.lam.Model.product.Product;
+import com.example.pokecenter.customer.lam.State.CompletedState;
+import com.example.pokecenter.customer.lam.State.OrderPlacedState;
+import com.example.pokecenter.customer.lam.State.PackagedState;
+import com.example.pokecenter.customer.lam.State.ShippedState;
 import com.example.pokecenter.vender.Model.Notification.NotificationData;
 import com.example.pokecenter.vender.Model.Notification.PushNotification;
 import com.example.pokecenter.vender.Model.Notification.RetrofitInstance;
@@ -53,7 +58,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 
 
-public class FirebaseSupportVender {
+public class FirebaseSupportVenderDP {
 
     private String urlDb = "https://pokecenter-ae954-default-rtdb.firebaseio.com/";
     private final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
@@ -790,7 +795,7 @@ public class FirebaseSupportVender {
                             fetchedOrders.add(order);
 
                             if (counter.decrementAndGet() == 0) {
-                                fetchedOrders.removeIf(o -> !o.getStatus().contains(status));
+                                fetchedOrders.removeIf(o -> !o.getState().getStatus().contains(status));
                                 fetchedOrders.sort(Comparator.comparing(Order::getCreateDateTime));
                                 fetchOrdersFuture.complete(null); // Notify the future that orders are fetched
                             }
@@ -816,21 +821,20 @@ public class FirebaseSupportVender {
     }
 
 
-    public void ChangeOrderStatus(String orderId, String status) throws IOException {
-        OkHttpClient client = new OkHttpClient();
+    public void changeOrderStatus(String orderId, String newStatus) throws IOException {
 
+        OkHttpClient client = new OkHttpClient();
         Map<String, Object> patchData = new HashMap<>();
-        patchData.put("status", status);
+        patchData.put("status", newStatus);
 
         String jsonData = new Gson().toJson(patchData);
         RequestBody body = RequestBody.create(jsonData, JSON);
-
         Request request = new Request.Builder()
                 .url(urlDb + "orders/" + orderId + ".json")
                 .patch(body)
                 .build();
 
-        Response response = client.newCall(request).execute();
+        client.newCall(request).execute();
     }
 
 
@@ -916,7 +920,7 @@ public class FirebaseSupportVender {
         return notificationRef.updateChildren(updateData);
     }
 
-    public void pushNotificationForPackaged(String orderId, boolean isCancel) {
+    public void pushNotificationForPackaged(String orderId) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference reference = database.getReference("orders");
         final String[] customerId = new String[1];
@@ -949,15 +953,11 @@ public class FirebaseSupportVender {
                                 Log.e("TAG", "Notification id: " + notificationId[0]);
 
                                 String title = "Order Packaged";
-                                String content1;
-                                if(isCancel) content1="Your order "  +
-                                orderId + "is Cancelled";
-                                else content1 =
-                                        "Your order with tracking number " +
+                                String content = "Your order with tracking number " +
                                         orderId +
                                         " has been packaged and is ready for delivery." +
                                         " We will notify you once it's out for delivery";
-                                String content = content1;
+
                                 HashMap<String, Object> notificationNode = new HashMap<>();
                                 notificationNode.put("content", content);
                                 notificationNode.put("read", false);

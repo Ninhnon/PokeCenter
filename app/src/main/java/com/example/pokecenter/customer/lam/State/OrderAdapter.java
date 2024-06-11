@@ -1,4 +1,4 @@
-package com.example.pokecenter.customer.lam.Model.order;
+package com.example.pokecenter.customer.lam.State;
 
 import android.content.Context;
 import android.os.Handler;
@@ -20,7 +20,6 @@ import com.example.pokecenter.customer.lam.API.FirebaseSupportCustomer;
 import com.example.pokecenter.customer.lam.Interface.OrderRecyclerViewInterface;
 import com.example.pokecenter.customer.lam.Model.product.Product;
 import com.example.pokecenter.customer.lam.Provider.ProductData;
-import com.google.android.material.divider.MaterialDivider;
 
 import java.io.IOException;
 import java.text.NumberFormat;
@@ -68,7 +67,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
 
         holder.createDateTime.setText("Created: " + order.getCreateDateTimeString());
 
-        holder.orderStatus.setText(order.getStatus());
+        holder.orderStatus.setText(order.getState().getStatus());
 
         holder.listOrders.removeAllViews();
         order.getOrdersDetail().forEach(detailOrder -> {
@@ -104,10 +103,10 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         holder.expandableLayout.setVisibility(View.GONE);
 
 
-        if (order.getStatus().equals("Delivered")) {
+        if (order.getState().getStatus().equals("Delivered")) {
             holder.operations.setVisibility(View.VISIBLE);
 
-            holder.orderStatus.setText(order.getStatus() + " - " + dateFormat.format(order.getDeliveryDate()));
+            holder.orderStatus.setText(order.getState().getStatus() + " - " + dateFormat.format(order.getDeliveryDate()));
 
             LocalDate localDate = order.getDeliveryDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -115,7 +114,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
 
         } else {
             holder.operations.setVisibility(View.GONE);
-            holder.orderStatus.setText(order.getStatus());
+            holder.orderStatus.setText(order.getState().getStatus());
         }
 
 
@@ -207,7 +206,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
                         if (finalIsSuccess) {
 
                             operations.setVisibility(View.GONE);
-                            order.setStatus("Delivery completed");
+                            order.setState(new CompletedState());
 
                             notifyItemChanged(pos);
 

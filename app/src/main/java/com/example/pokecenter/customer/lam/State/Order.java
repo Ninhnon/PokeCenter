@@ -1,31 +1,87 @@
-package com.example.pokecenter.customer.lam.Model.order;
+package com.example.pokecenter.customer.lam.State;
+
+import com.example.pokecenter.customer.lam.Interface.OrderState;
+import com.example.pokecenter.customer.lam.Model.order.DetailOrder;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+import okhttp3.MediaType;
+
 public class Order {
     private String id;
-
     private int totalAmount;
     private Date createDateTime;
     private List<DetailOrder> ordersDetail;
-    private String status;
     private Date deliveryDate;
     private boolean isExpand;
-
     private String customerName;
     private String customerPhoneNumber;
     private String deliveryAddress;
+    private String urlDb = "https://pokecenter-ae954-default-rtdb.firebaseio.com/";
+    private final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
 
+    private OrderState state;
+    public Order(String id, int totalAmount, Date createDateTime, List<DetailOrder> ordersDetail, OrderState state) {
+        this.id = id;
+        this.totalAmount = totalAmount;
+        this.createDateTime = createDateTime;
+        this.ordersDetail = ordersDetail;
+        this.state = state;
+        this.state.setOrder(this); 
+        this.isExpand = false;
+    }
     public Order(String id, int totalAmount, Date createDateTime, List<DetailOrder> ordersDetail, String status) {
         this.id = id;
         this.totalAmount = totalAmount;
         this.createDateTime = createDateTime;
         this.ordersDetail = ordersDetail;
-        this.status = status;
-        isExpand = false;
+        this.isExpand = false;
+        switch (status) {
+            case "Order placed":
+                this.state = new OrderPlacedState();
+                break;
+            case "Packaged":
+                this.state = new PackagedState();
+                break;
+            case "Delivered":
+                this.state = new ShippedState();
+                break;
+            case "Undelivered":
+                this.state = new UndeliveredState();
+                break;
+            case "Completed":
+                this.state = new CompletedState();
+                break;
+            case "Cancelled":
+                this.state = new CancelledState();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown status: " + status);
+        }
+        this.state.setOrder(this);
+    }
+    public OrderState getState(){
+        return state;
+    }
+    public void changeState(OrderState newState) {
+        this.state = newState;
+        this.state.setOrder(this);
+    }
+    public String getStatus() {
+        return this.state.getStatus();
+    }
+    public String acceptState() {
+        return this.state.onAccept();
+    }
+    public String cancelState() {
+        return this.state.onCancel();
+    }
+
+    public void setState(OrderState state) {
+        this.state = state;
     }
 
     public String getId() {
@@ -78,12 +134,9 @@ public class Order {
         isExpand = !isExpand;
     }
 
-    public String getStatus() {
-        return status;
-    }
 
     public void setStatus(String status) {
-        this.status = status;
+
     }
 
     public Date getDeliveryDate() {
