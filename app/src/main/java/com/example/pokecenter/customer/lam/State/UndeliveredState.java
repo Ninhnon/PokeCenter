@@ -5,7 +5,7 @@ import com.example.pokecenter.vender.API.FirebaseSupportVenderDP;
 
 import java.io.IOException;
 
-public class PackagedState implements OrderState {
+public class UndeliveredState implements OrderState {
     private Order order;
     @Override
     public void setOrder(Order order) {
@@ -13,34 +13,25 @@ public class PackagedState implements OrderState {
     }
     @Override
     public void updateState(Order order) {
-        System.out.println("Processing order in Packaged state.");
-        order.changeState(new ShippedState());
+        System.out.println("Processing order in Undelivered state.");
     }
     @Override
     public String getStatus() {
-        return "Packaged";
+        return "Undelivered";
     }
     @Override
     public String onAccept() {
-        try {
-            new FirebaseSupportVenderDP().changeOrderStatus(order.getId(), "Shipped");
-            new FirebaseSupportVenderDP().pushNotificationForPackaged(order.getId());
-        } catch (IOException e) {
-            return "Failed to accept order.";
-        }
-        order.changeState(new ShippedState());
-        return "Order shipped.";
+        return "Order not delivered. Cannot accept.";
     }
     @Override
     public String onCancel() {
         try {
-            new FirebaseSupportVenderDP().changeOrderStatus(order.getId(), "Cancelled");
+            new FirebaseSupportVenderDP().changeOrderStatus(order.getId(), "Undelivered");
             new FirebaseSupportVenderDP().pushNotificationForPackaged(order.getId());
         } catch (IOException e) {
             return "Failed to cancel order.";
         }
-        order.changeState(new CancelledState());
-        return "Order cancelled.";
+        return "Order already undelivered.";
     }
 }
 

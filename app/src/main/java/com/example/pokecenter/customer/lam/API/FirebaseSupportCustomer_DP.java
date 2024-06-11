@@ -19,7 +19,7 @@ import com.example.pokecenter.customer.lam.State.Order;
 import com.example.pokecenter.customer.lam.State.CompletedState;
 import com.example.pokecenter.customer.lam.State.OrderPlacedState;
 import com.example.pokecenter.customer.lam.State.PackagedState;
-import com.example.pokecenter.customer.lam.State.DeliveredState;
+import com.example.pokecenter.customer.lam.State.ShippedState;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -1035,24 +1035,13 @@ public class FirebaseSupportCustomer_DP {
                 });
 
                 Order order = null;
-                String status =(String) value.get("status");
-                OrderState state;
-
-                if(status.contains("Packaged"))
-                    state = new PackagedState();
-                else if(status.contains("Delivery completed"))
-                    state= new CompletedState();
-                else if(status.contains("Received"))
-                    state = new DeliveredState();
-                else
-                    state=new OrderPlacedState();
                 try {
                     order = new Order(
                             key,
                             ((Double) value.get("totalAmount")).intValue(),
                             outputFormat.parse((String) value.get("createDate")),
                             details,
-                            state
+                            (String) value.get("status")
                     );
                 } catch (ParseException e) {
 

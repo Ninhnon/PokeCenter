@@ -18,12 +18,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.pokecenter.R;
 import com.example.pokecenter.customer.lam.Interface.OrderState;
 import com.example.pokecenter.customer.lam.State.Order;
-import com.example.pokecenter.customer.lam.Model.product.Product;
-import com.example.pokecenter.customer.lam.Provider.ProductData;
-import com.example.pokecenter.customer.lam.State.CompletedState;
-import com.example.pokecenter.customer.lam.State.OrderPlacedState;
+
 import com.example.pokecenter.customer.lam.State.PackagedState;
-import com.example.pokecenter.customer.lam.State.DeliveredState;
 import com.example.pokecenter.vender.API.FirebaseSupportVenderDP;
 
 import java.io.IOException;
@@ -134,22 +130,13 @@ public class VenderOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapter
                     } catch (IOException e) {
                         isSuccess = false;
                     }
-                    OrderState state;
+                    ;
 
-                    if(newStatus.contains("Packaged"))
-                        state = new PackagedState();
-                    else if(newStatus.contains("Delivery completed"))
-                        state= new CompletedState();
-                    else if(newStatus.contains("Received"))
-                        state = new DeliveredState();
-                    else
-                        state=new OrderPlacedState();
                     boolean finalIsSuccess = isSuccess;
                     handler.post(() -> {
                         if (finalIsSuccess) {
-
-                            order.setState(state);
-
+                            order.setStatus(newStatus);
+                            order.acceptState();
                             mOrders.remove(pos);
                             notifyItemRemoved(pos);
 

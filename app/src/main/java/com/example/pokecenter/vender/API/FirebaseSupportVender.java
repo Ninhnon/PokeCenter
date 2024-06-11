@@ -916,7 +916,7 @@ public class FirebaseSupportVender {
         return notificationRef.updateChildren(updateData);
     }
 
-    public void pushNotificationForPackaged(String orderId) {
+    public void pushNotificationForPackaged(String orderId, boolean isCancel) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference reference = database.getReference("orders");
         final String[] customerId = new String[1];
@@ -949,11 +949,15 @@ public class FirebaseSupportVender {
                                 Log.e("TAG", "Notification id: " + notificationId[0]);
 
                                 String title = "Order Packaged";
-                                String content = "Your order with tracking number " +
+                                String content1;
+                                if(isCancel) content1="Your order "  +
+                                orderId + "is Cancelled";
+                                else content1 =
+                                        "Your order with tracking number " +
                                         orderId +
                                         " has been packaged and is ready for delivery." +
                                         " We will notify you once it's out for delivery";
-
+                                String content = content1;
                                 HashMap<String, Object> notificationNode = new HashMap<>();
                                 notificationNode.put("content", content);
                                 notificationNode.put("read", false);

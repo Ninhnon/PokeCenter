@@ -21,32 +21,69 @@ public class Order {
     private String deliveryAddress;
     private String urlDb = "https://pokecenter-ae954-default-rtdb.firebaseio.com/";
     private final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
+
     private OrderState state;
-
-    public void changeState(OrderState newState) {
-        this.state = newState;
-        this.state.setOrder(this);
-    }
-
-    public void updateState() {
-        this.state.updateState(this);
-    }
     public Order(String id, int totalAmount, Date createDateTime, List<DetailOrder> ordersDetail, OrderState state) {
         this.id = id;
         this.totalAmount = totalAmount;
         this.createDateTime = createDateTime;
         this.ordersDetail = ordersDetail;
         this.state = state;
-        this.state.setOrder(this); // initial state
+        this.state.setOrder(this); 
         this.isExpand = false;
+    }
+    public Order(String id, int totalAmount, Date createDateTime, List<DetailOrder> ordersDetail, String status) {
+        this.id = id;
+        this.totalAmount = totalAmount;
+        this.createDateTime = createDateTime;
+        this.ordersDetail = ordersDetail;
+        this.isExpand = false;
+        switch (status) {
+            case "Order placed":
+                this.state = new OrderPlacedState();
+                break;
+            case "Packaged":
+                this.state = new PackagedState();
+                break;
+            case "Delivered":
+                this.state = new ShippedState();
+                break;
+            case "Undelivered":
+                this.state = new UndeliveredState();
+                break;
+            case "Completed":
+                this.state = new CompletedState();
+                break;
+            case "Cancelled":
+                this.state = new CancelledState();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown status: " + status);
+        }
+        this.state.setOrder(this);
+    }
+    public OrderState getState(){
+        return state;
+    }
+    public void changeState(OrderState newState) {
+        this.state = newState;
+        this.state.setOrder(this);
+    }
+    public String getStatus() {
+        return this.state.getStatus();
+    }
+    public String acceptState() {
+        return this.state.onAccept();
+    }
+    public String cancelState() {
+        return this.state.onCancel();
     }
 
     public void setState(OrderState state) {
         this.state = state;
     }
-    public OrderState getState(){
-        return state;
-    }
+
     public String getId() {
         return id;
     }
@@ -97,13 +134,10 @@ public class Order {
         isExpand = !isExpand;
     }
 
-//    public String getStatus() {
-//        return status;
-//    }
-//
-//    public void setStatus(String status) {
-//        this.status = status;
-//    }
+
+    public void setStatus(String status) {
+
+    }
 
     public Date getDeliveryDate() {
         return deliveryDate;

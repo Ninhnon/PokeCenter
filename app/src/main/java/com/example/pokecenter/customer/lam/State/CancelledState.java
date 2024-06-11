@@ -5,7 +5,7 @@ import com.example.pokecenter.vender.API.FirebaseSupportVenderDP;
 
 import java.io.IOException;
 
-public class OrderPlacedState implements OrderState {
+public class CancelledState implements OrderState {
     private Order order;
     @Override
     public void setOrder(Order order) {
@@ -13,25 +13,16 @@ public class OrderPlacedState implements OrderState {
     }
     @Override
     public void updateState(Order order) {
-        System.out.println("Processing order in Order Placed state.");
-        order.changeState(new PackagedState());
+        System.out.println("Processing order in Cancelled state.");
     }
     @Override
     public String getStatus() {
-        return "Order placed";
+        return "Cancelled";
     }
     @Override
     public String onAccept() {
-        try {
-            new FirebaseSupportVenderDP().changeOrderStatus(order.getId(), "Packaged");
-            new FirebaseSupportVenderDP().pushNotificationForPackaged(order.getId());
-        } catch (IOException e) {
-            return "Failed to accept order.";
-        }
-        order.changeState(new PackagedState());
-        return "Order accepted and packaged.";
+        return "Order cancelled. Cannot accept.";
     }
-
     @Override
     public String onCancel() {
         try {
@@ -40,8 +31,7 @@ public class OrderPlacedState implements OrderState {
         } catch (IOException e) {
             return "Failed to cancel order.";
         }
-        order.changeState(new CancelledState());
-        return "Order cancelled.";
+        return "Order already cancelled.";
     }
 }
 

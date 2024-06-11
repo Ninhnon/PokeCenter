@@ -14,7 +14,7 @@ import com.example.pokecenter.customer.lam.Model.product.Product;
 import com.example.pokecenter.customer.lam.State.CompletedState;
 import com.example.pokecenter.customer.lam.State.OrderPlacedState;
 import com.example.pokecenter.customer.lam.State.PackagedState;
-import com.example.pokecenter.customer.lam.State.DeliveredState;
+import com.example.pokecenter.customer.lam.State.ShippedState;
 import com.example.pokecenter.vender.Model.Notification.NotificationData;
 import com.example.pokecenter.vender.Model.Notification.PushNotification;
 import com.example.pokecenter.vender.Model.Notification.RetrofitInstance;
@@ -760,23 +760,13 @@ public class FirebaseSupportVenderDP {
                             });
 
                             Order order = null;
-                            OrderState state;
-
-                            if(status.contains("Packaged"))
-                                state = new PackagedState();
-                            else if(status.contains("Delivery completed"))
-                                state= new CompletedState();
-                            else if(status.contains("Received"))
-                                state = new DeliveredState();
-                            else
-                                state=new OrderPlacedState();
                             try {
                                 order = new Order(
                                         key,
                                         ((Double) value.get("totalAmount")).intValue(),
                                         outputFormat.parse((String) value.get("createDate")),
                                         details,
-                                        state
+                                        (String) value.get("status")
                                 );
                             } catch (java.text.ParseException e) {
                                 throw new RuntimeException(e);
