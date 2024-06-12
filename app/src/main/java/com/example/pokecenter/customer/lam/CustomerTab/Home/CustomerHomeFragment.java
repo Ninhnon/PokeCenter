@@ -28,10 +28,12 @@ import com.example.pokecenter.customer.lam.CustomerTab.Home.NextActivity.SearchP
 import com.example.pokecenter.customer.lam.CustomerTab.Home.NextActivity.SearchProductByCategoryActivity;
 import com.example.pokecenter.customer.lam.CustomerTab.Home.NextActivity.TrendingProductsActivity;
 import com.example.pokecenter.customer.lam.CustomerTab.Profile.CustomerProfileFragment;
+import com.example.pokecenter.customer.lam.Interface.Iterator;
 import com.example.pokecenter.customer.lam.Interface.PokemonRecyclerViewInterface;
 import com.example.pokecenter.customer.lam.Model.account.Account;
 import com.example.pokecenter.customer.lam.Model.pokemon.Pokemon;
 import com.example.pokecenter.customer.lam.Model.pokemon.PokemonAdapter;
+import com.example.pokecenter.customer.lam.Model.pokemon.PokemonCollection;
 import com.example.pokecenter.customer.lam.Model.product.Product;
 import com.example.pokecenter.customer.lam.Model.product.ProductAdapter;
 import com.example.pokecenter.customer.lam.Provider.ProductData;
@@ -44,6 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class CustomerHomeFragment extends Fragment implements PokemonRecyclerViewInterface {
@@ -124,7 +127,7 @@ public class CustomerHomeFragment extends Fragment implements PokemonRecyclerVie
             ExecutorService executor = Executors.newCachedThreadPool();
             Handler handler = new Handler(Looper.getMainLooper());
 
-            for (int i = 0; i < loadingPokemons.size(); ++i) {
+/*            for (int i = 0; i < loadingPokemons.size(); ++i) {
                 Pokemon poke = loadingPokemons.get(i);
 
                 int finalI = i;
@@ -135,6 +138,24 @@ public class CustomerHomeFragment extends Fragment implements PokemonRecyclerVie
                         poke.setImageUrl(fetchedPokemon.getImageUrl());
                         poke.setType(fetchedPokemon.getType());
                         pokemonAdapter.updateItem(finalI);
+                    });
+                });
+            }*/
+
+            /* Code mới áp dụng Iterator Design Pattern */
+            PokemonCollection pokemonCollection = new PokemonCollection(loadingPokemons);
+            Iterator<Pokemon> iterator = pokemonCollection.getIterator();
+            AtomicInteger index = new AtomicInteger(0);
+            while (iterator.hasNext()) {
+                Pokemon poke = iterator.next();
+                int currentIndex = index.getAndIncrement();
+                executor.execute(() -> {
+                    Pokemon fetchedPokemon = PokeApiFetcher.fetchPokemonRandom();
+                    handler.post(() -> {
+                        poke.setName(fetchedPokemon.getName());
+                        poke.setImageUrl(fetchedPokemon.getImageUrl());
+                        poke.setType(fetchedPokemon.getType());
+                        pokemonAdapter.updateItem(currentIndex);
                     });
                 });
             }
