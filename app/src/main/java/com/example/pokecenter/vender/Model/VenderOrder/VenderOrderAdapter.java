@@ -83,7 +83,8 @@ public class VenderOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapter
         private LinearLayout expandableLayout;
         private LinearLayout listOrders;
 
-        private Button packaged;
+        private Button packagedBtn;
+        private Button cancelBtn;
 
         private ProgressBar progressBar;
 
@@ -100,15 +101,17 @@ public class VenderOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapter
             expandableLayout = itemView.findViewById(R.id.expandable_part);
             listOrders = itemView.findViewById(R.id.list_orders);
 
-            packaged = itemView.findViewById(R.id.packedOrder);
+            packagedBtn = itemView.findViewById(R.id.packedOrder);
+            cancelBtn = itemView.findViewById(R.id.cancelOrder);
 
             progressBar = itemView.findViewById(R.id.progress_bar);
 
 
 
-            packaged.setOnClickListener(view -> {
+            packagedBtn.setOnClickListener(view -> {
 
-                packaged.setVisibility(View.GONE);
+                packagedBtn.setVisibility(View.GONE);
+                cancelBtn.setVisibility(View.GONE);
                 progressBar.setVisibility(View.VISIBLE);
 
                 int pos = getAbsoluteAdapterPosition();
@@ -117,25 +120,14 @@ public class VenderOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapter
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 Handler handler = new Handler(Looper.getMainLooper());
 
-                String newStatus = "Packaged - " + dateFormat.format(new Date());
 
                 executor.execute(() -> {
 
-                    boolean isSuccess = true;
 
-                    try {
-                        new FirebaseSupportVenderDP().changeOrderStatus(order.getId(), newStatus);
-                        new FirebaseSupportVenderDP().pushNotificationForPackaged(order.getId());
+                    order.acceptState();
 
-                    } catch (IOException e) {
-                        isSuccess = false;
-                    }
-                    ;
-
-                    boolean finalIsSuccess = isSuccess;
                     handler.post(() -> {
-                        if (finalIsSuccess) {
-                            order.setStatus(newStatus);
+
                             order.acceptState();
                             mOrders.remove(pos);
                             notifyItemRemoved(pos);
@@ -145,21 +137,35 @@ public class VenderOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapter
 
                             progressBar.setVisibility(View.GONE);
 
-                        } else {
+                        });
+                });
+            });
 
-                            packaged.setVisibility(View.VISIBLE);
-                            progressBar.setVisibility(View.GONE);
+            cancelBtn.setOnClickListener(view -> {
 
-                            Toast.makeText(mContext, "Failed to connect server!", Toast.LENGTH_SHORT)
-                                    .show();
+                packagedBtn.setVisibility(View.GONE);
+                cancelBtn.setVisibility(View.GONE);
+                progressBar.setVisibility(View.VISIBLE);
 
-                        }
-                    });
+                int pos = getAbsoluteAdapterPosition();
+                Order order = mOrders.get(pos);
+
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+
+
+                executor.execute(() -> {
+                    order.cancelState();
+                    mOrders.remove(pos);
+                    notifyItemRemoved(pos);
+                    Toast.makeText(mContext, "Order status changed", Toast.LENGTH_SHORT)
+                    .show();
+                    progressBar.setVisibility(View.GONE);
+
+
                 });
             });
 
             itemView.setOnClickListener(view -> {
-
                 int pos = getAbsoluteAdapterPosition();
                 Order order = mOrders.get(pos);
                 order.toggleExpand();
