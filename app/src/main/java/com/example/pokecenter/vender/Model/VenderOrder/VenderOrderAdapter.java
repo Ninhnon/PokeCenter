@@ -151,16 +151,18 @@ public class VenderOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapter
                 Order order = mOrders.get(pos);
 
                 ExecutorService executor = Executors.newSingleThreadExecutor();
+                Handler handler = new Handler(Looper.getMainLooper());
 
 
                 executor.execute(() -> {
+                    handler.post(() -> {
                     order.cancelState();
                     mOrders.remove(pos);
                     notifyItemRemoved(pos);
                     Toast.makeText(mContext, "Order status changed", Toast.LENGTH_SHORT)
                     .show();
                     progressBar.setVisibility(View.GONE);
-
+                    });
 
                 });
             });
