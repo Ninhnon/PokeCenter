@@ -4,7 +4,7 @@ import com.example.pokecenter.customer.lam.Interface.OrderState;
 import com.example.pokecenter.vender.API.FirebaseSupportVenderDP;
 
 import java.io.IOException;
-
+import com.example.pokecenter.customer.lam.Model.order.Order;
 public class ShippedState implements OrderState {
     private Order order;
     @Override
@@ -18,7 +18,7 @@ public class ShippedState implements OrderState {
     }
     @Override
     public String getStatus() {
-        return "Shipped";
+        return "Delivered";
     }
     @Override
     public String onAccept() {

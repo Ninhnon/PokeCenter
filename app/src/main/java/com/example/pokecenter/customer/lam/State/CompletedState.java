@@ -1,6 +1,7 @@
 package com.example.pokecenter.customer.lam.State;
 
 import com.example.pokecenter.customer.lam.Interface.OrderState;
+import com.example.pokecenter.customer.lam.Model.order.Order;
 
 public class CompletedState implements OrderState {
     private Order order;

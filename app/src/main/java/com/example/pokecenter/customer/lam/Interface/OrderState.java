@@ -1,6 +1,6 @@
 package com.example.pokecenter.customer.lam.Interface;
 
-import com.example.pokecenter.customer.lam.State.Order;
+import com.example.pokecenter.customer.lam.Model.order.Order;
 
 public interface OrderState {
     void setOrder(Order order);

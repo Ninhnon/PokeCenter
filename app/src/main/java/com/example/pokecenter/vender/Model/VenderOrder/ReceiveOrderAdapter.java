@@ -169,7 +169,7 @@ public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapte
                     boolean finalIsSuccess = isSuccess;
                     handler.post(() -> {
                         if (finalIsSuccess) {
-                            order.setStatus(newStatus);
+                            order.acceptState();
                             mOrders.remove(pos);
                             notifyItemRemoved(pos);
 
@@ -209,7 +209,7 @@ public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapte
                     boolean finalIsSuccess = isSuccess;
                     handler.post(() -> {
                         if (finalIsSuccess) {
-
+                            order.cancelState();
                             mOrders.remove(pos);
                             notifyItemRemoved(pos);
 

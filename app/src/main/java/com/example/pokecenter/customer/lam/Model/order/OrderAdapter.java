@@ -20,6 +20,7 @@ import com.example.pokecenter.customer.lam.API.FirebaseSupportCustomer;
 import com.example.pokecenter.customer.lam.Interface.OrderRecyclerViewInterface;
 import com.example.pokecenter.customer.lam.Model.product.Product;
 import com.example.pokecenter.customer.lam.Provider.ProductData;
+import com.example.pokecenter.customer.lam.State.CompletedState;
 import com.google.android.material.divider.MaterialDivider;
 
 import java.io.IOException;
@@ -207,7 +208,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
                         if (finalIsSuccess) {
 
                             operations.setVisibility(View.GONE);
-                            order.setStatus("Delivery completed");
+                            order.changeState(new CompletedState());
 
                             notifyItemChanged(pos);
 

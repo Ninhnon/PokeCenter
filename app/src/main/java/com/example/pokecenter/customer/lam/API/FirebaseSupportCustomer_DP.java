@@ -1,7 +1,6 @@
 package com.example.pokecenter.customer.lam.API;
 
 import com.example.pokecenter.customer.lam.CustomerTab.Profile.NextActivity.MyAddressesActivity;
-import com.example.pokecenter.customer.lam.Interface.OrderState;
 import com.example.pokecenter.customer.lam.Model.address.Address;
 import com.example.pokecenter.customer.lam.Model.cart.Cart;
 import com.example.pokecenter.customer.lam.Model.checkout_item.CheckoutItem;
@@ -15,11 +14,6 @@ import com.example.pokecenter.customer.lam.Model.vender.Vender;
 import com.example.pokecenter.customer.lam.Model.voucher.VoucherInfo;
 import com.example.pokecenter.customer.lam.Provider.FollowData;
 import com.example.pokecenter.customer.lam.Provider.ProductData;
-import com.example.pokecenter.customer.lam.State.Order;
-import com.example.pokecenter.customer.lam.State.CompletedState;
-import com.example.pokecenter.customer.lam.State.OrderPlacedState;
-import com.example.pokecenter.customer.lam.State.PackagedState;
-import com.example.pokecenter.customer.lam.State.ShippedState;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -989,89 +983,89 @@ public class FirebaseSupportCustomer_DP {
     }
 
 
-    public List<Order> fetchingOrdersData() throws IOException {
-
-        List<Order> fetchedOrders = new ArrayList<>();
-
-        OkHttpClient client = new OkHttpClient();
-
-        // Construct the URL for the Firebase Realtime Database endpoint
-        HttpUrl.Builder urlBuilder = HttpUrl.parse("https://pokecenter-ae954-default-rtdb.firebaseio.com/orders.json").newBuilder();
-
-        String emailWithCurrentUser = FirebaseAuth.getInstance().getCurrentUser().getEmail();
-        urlBuilder.addQueryParameter("orderBy", "\"customerId\"")
-                .addQueryParameter("equalTo", "\"" + emailWithCurrentUser.replace(".", ",") + "\"");
-
-        String url = urlBuilder.build().toString();
-
-        // Create an HTTP GET request
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-
-        Response response = client.newCall(request).execute();
-
-        if (response.isSuccessful()) {
-            String responseString = response.body().string();
-
-            if (responseString.equals("null")) {
-                return new ArrayList<>();
-            }
-
-            Type type = new TypeToken<Map<String, Map<String, Object>>>(){}.getType();
-            Map<String, Map<String, Object>> fetchedData = new Gson().fromJson(responseString, type);
-
-            fetchedData.forEach((key, value) -> {
-
-                List<Map<String, Object>> detailOrderData = (List<Map<String, Object>>) value.get("details");
-
-                List<DetailOrder> details = new ArrayList<>();
-                detailOrderData.forEach(detailOrder -> {
-                    details.add(new DetailOrder(
-                            (String) detailOrder.get("productId"),
-                            ((Double) detailOrder.get("selectedOption")).intValue(),
-                            ((Double) detailOrder.get("quantity")).intValue()
-                    ));
-                });
-
-                Order order = null;
-                try {
-                    order = new Order(
-                            key,
-                            ((Double) value.get("totalAmount")).intValue(),
-                            outputFormat.parse((String) value.get("createDate")),
-                            details,
-                            (String) value.get("status")
-                    );
-                } catch (ParseException e) {
-
-                }
-
-
-                String stringDeliveryDate = (String) value.get("deliveryDate");
-
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-                if (stringDeliveryDate.isEmpty()) {
-
-                } else {
-
-                    try {
-                        order.setDeliveryDate(dateFormat.parse(stringDeliveryDate));
-                    } catch (ParseException e) {
-
-                    }
-
-                }
-
-                fetchedOrders.add(order);
-
-            });
-        }
-
-        fetchedOrders.sort(Comparator.comparing(Order::getCreateDateTime).reversed());
-        return fetchedOrders;
-
-    }
+//    public List<Order> fetchingOrdersData() throws IOException {
+//
+//        List<Order> fetchedOrders = new ArrayList<>();
+//
+//        OkHttpClient client = new OkHttpClient();
+//
+//        // Construct the URL for the Firebase Realtime Database endpoint
+//        HttpUrl.Builder urlBuilder = HttpUrl.parse("https://pokecenter-ae954-default-rtdb.firebaseio.com/orders.json").newBuilder();
+//
+//        String emailWithCurrentUser = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+//        urlBuilder.addQueryParameter("orderBy", "\"customerId\"")
+//                .addQueryParameter("equalTo", "\"" + emailWithCurrentUser.replace(".", ",") + "\"");
+//
+//        String url = urlBuilder.build().toString();
+//
+//        // Create an HTTP GET request
+//        Request request = new Request.Builder()
+//                .url(url)
+//                .build();
+//
+//        Response response = client.newCall(request).execute();
+//
+//        if (response.isSuccessful()) {
+//            String responseString = response.body().string();
+//
+//            if (responseString.equals("null")) {
+//                return new ArrayList<>();
+//            }
+//
+//            Type type = new TypeToken<Map<String, Map<String, Object>>>(){}.getType();
+//            Map<String, Map<String, Object>> fetchedData = new Gson().fromJson(responseString, type);
+//
+//            fetchedData.forEach((key, value) -> {
+//
+//                List<Map<String, Object>> detailOrderData = (List<Map<String, Object>>) value.get("details");
+//
+//                List<DetailOrder> details = new ArrayList<>();
+//                detailOrderData.forEach(detailOrder -> {
+//                    details.add(new DetailOrder(
+//                            (String) detailOrder.get("productId"),
+//                            ((Double) detailOrder.get("selectedOption")).intValue(),
+//                            ((Double) detailOrder.get("quantity")).intValue()
+//                    ));
+//                });
+//
+//                Order order = null;
+//                try {
+//                    order = new Order(
+//                            key,
+//                            ((Double) value.get("totalAmount")).intValue(),
+//                            outputFormat.parse((String) value.get("createDate")),
+//                            details,
+//                            (String) value.get("status")
+//                    );
+//                } catch (ParseException e) {
+//
+//                }
+//
+//
+//                String stringDeliveryDate = (String) value.get("deliveryDate");
+//
+//                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+//                if (stringDeliveryDate.isEmpty()) {
+//
+//                } else {
+//
+//                    try {
+//                        order.setDeliveryDate(dateFormat.parse(stringDeliveryDate));
+//                    } catch (ParseException e) {
+//
+//                    }
+//
+//                }
+//
+//                fetchedOrders.add(order);
+//
+//            });
+//        }
+//
+//        fetchedOrders.sort(Comparator.comparing(Order::getCreateDateTime).reversed());
+//        return fetchedOrders;
+//
+//    }
 
     public List<PurchasedProduct> fetchingPurchasedProducts() throws IOException {
 
