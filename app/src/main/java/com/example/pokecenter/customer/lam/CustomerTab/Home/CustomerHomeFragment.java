@@ -28,8 +28,10 @@ import com.example.pokecenter.customer.lam.CustomerTab.Home.NextActivity.SearchP
 import com.example.pokecenter.customer.lam.CustomerTab.Home.NextActivity.SearchProductByCategoryActivity;
 import com.example.pokecenter.customer.lam.CustomerTab.Home.NextActivity.TrendingProductsActivity;
 import com.example.pokecenter.customer.lam.CustomerTab.Profile.CustomerProfileFragment;
-import com.example.pokecenter.customer.lam.Interface.Iterator;
+import com.example.pokecenter.customer.lam.Iterator.Iterator;
 import com.example.pokecenter.customer.lam.Interface.PokemonRecyclerViewInterface;
+import com.example.pokecenter.customer.lam.Iterator.PokemonTree;
+import com.example.pokecenter.customer.lam.Iterator.Vertex;
 import com.example.pokecenter.customer.lam.Model.account.Account;
 import com.example.pokecenter.customer.lam.Model.pokemon.Pokemon;
 import com.example.pokecenter.customer.lam.Model.pokemon.PokemonAdapter;
@@ -43,7 +45,9 @@ import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Stack;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -127,7 +131,7 @@ public class CustomerHomeFragment extends Fragment implements PokemonRecyclerVie
             ExecutorService executor = Executors.newCachedThreadPool();
             Handler handler = new Handler(Looper.getMainLooper());
 
-/*            for (int i = 0; i < loadingPokemons.size(); ++i) {
+            for (int i = 0; i < loadingPokemons.size(); ++i) {
                 Pokemon poke = loadingPokemons.get(i);
 
                 int finalI = i;
@@ -140,25 +144,113 @@ public class CustomerHomeFragment extends Fragment implements PokemonRecyclerVie
                         pokemonAdapter.updateItem(finalI);
                     });
                 });
-            }*/
-
-            /* Code mới áp dụng Iterator Design Pattern */
-            PokemonCollection pokemonCollection = new PokemonCollection(loadingPokemons);
-            Iterator<Pokemon> iterator = pokemonCollection.getIterator();
-            AtomicInteger index = new AtomicInteger(0);
-            while (iterator.hasNext()) {
-                Pokemon poke = iterator.next();
-                int currentIndex = index.getAndIncrement();
-                executor.execute(() -> {
-                    Pokemon fetchedPokemon = PokeApiFetcher.fetchPokemonRandom();
-                    handler.post(() -> {
-                        poke.setName(fetchedPokemon.getName());
-                        poke.setImageUrl(fetchedPokemon.getImageUrl());
-                        poke.setType(fetchedPokemon.getType());
-                        pokemonAdapter.updateItem(currentIndex);
-                    });
-                });
             }
+
+            Pokemon eevee = new Pokemon(1, "Eevee", "url1", "Normal");
+            Pokemon vaporeon = new Pokemon(2, "Vaporeon", "url2", "Water");
+            Pokemon jolteon = new Pokemon(3, "Jolteon", "url3", "Electric");
+            Pokemon flareon = new Pokemon(4, "Flareon", "url4", "Fire");
+
+            Pokemon tyrogue = new Pokemon(5, "Tyrogue", "url5", "Fighting");
+            Pokemon hitmonlee = new Pokemon(6, "Hitmonlee", "url6", "Fighting");
+            Pokemon hitmonchan = new Pokemon(7, "Hitmonchan", "url7", "Fighting");
+            Pokemon hitmontop = new Pokemon(8, "Hitmontop", "url8", "Fighting");
+
+            Pokemon wurmple = new Pokemon(9, "Wurmple", "url9", "Bug");
+            Pokemon silcoon = new Pokemon(10, "Silcoon", "url10", "Bug");
+            Pokemon beautifly = new Pokemon(11, "Beautifly", "url11", "Bug");
+            Pokemon cascoon = new Pokemon(12, "Cascoon", "url12", "Bug");
+            Pokemon dustox = new Pokemon(13, "Dustox", "url13", "Bug");
+
+            // Khởi tạo đỉnh
+            Vertex<Pokemon> eeveeVertex = new Vertex<>(eevee);
+            Vertex<Pokemon> vaporeonVertex = new Vertex<>(vaporeon);
+            Vertex<Pokemon> jolteonVertex = new Vertex<>(jolteon);
+            Vertex<Pokemon> flareonVertex = new Vertex<>(flareon);
+
+            Vertex<Pokemon> tyrogueVertex = new Vertex<>(tyrogue);
+            Vertex<Pokemon> hitmonleeVertex = new Vertex<>(hitmonlee);
+            Vertex<Pokemon> hitmonchanVertex = new Vertex<>(hitmonchan);
+            Vertex<Pokemon> hitmontopVertex = new Vertex<>(hitmontop);
+
+            Vertex<Pokemon> wurmpleVertex = new Vertex<>(wurmple);
+            Vertex<Pokemon> silcoonVertex = new Vertex<>(silcoon);
+            Vertex<Pokemon> beautiflyVertex = new Vertex<>(beautifly);
+            Vertex<Pokemon> cascoonVertex = new Vertex<>(cascoon);
+            Vertex<Pokemon> dustoxVertex = new Vertex<>(dustox);
+
+            // Thiết lập mối liên hệ tiến hóa
+            eeveeVertex.addNeighbor(vaporeonVertex);
+            eeveeVertex.addNeighbor(jolteonVertex);
+            eeveeVertex.addNeighbor(flareonVertex);
+
+            tyrogueVertex.addNeighbor(hitmonleeVertex);
+            tyrogueVertex.addNeighbor(hitmonchanVertex);
+            tyrogueVertex.addNeighbor(hitmontopVertex);
+
+            wurmpleVertex.addNeighbor(silcoonVertex);
+            silcoonVertex.addNeighbor(beautiflyVertex);
+            wurmpleVertex.addNeighbor(cascoonVertex);
+            cascoonVertex.addNeighbor(dustoxVertex);
+
+            // Tạo root
+            Pokemon rootPokemon = new Pokemon(0, "Root", "url0", "None");
+            Vertex<Pokemon> root = new Vertex<>(rootPokemon);
+
+            root.addNeighbor(eeveeVertex);
+            root.addNeighbor(tyrogueVertex);
+            root.addNeighbor(wurmpleVertex);
+
+            Stack<Vertex<Pokemon>> stack = new Stack<>();
+            stack.push(root);
+
+            while (!stack.isEmpty()) {
+                Vertex<Pokemon> current = stack.pop();
+
+                if (!current.isVisited()) {
+                    current.setVisited(true);
+                    pokemonAdapter.addData(new ArrayList<>(Collections.singletonList(current.getData())));
+                    System.out.println(current.getData().getName());
+
+                    // Thêm tất cả các đỉnh kề chưa được thăm vào stack
+                    List<Vertex<Pokemon>> neighbors = current.getNeighbors();
+                    for (Vertex<Pokemon> neighbor : neighbors) {
+                        if (!neighbor.isVisited()) {
+                            stack.push(neighbor);
+                        }
+                    }
+                }
+            }
+
+/*            // Tạo root
+            Pokemon rootPokemon = new Pokemon(0, "Root", "url0", "None");
+            Vertex<Pokemon> root = new Vertex<>(rootPokemon);
+
+            // Thêm các đỉnh gốc của từng nhóm vào root giả
+            root.addNeighbor(eeveeVertex);
+            root.addNeighbor(tyrogueVertex);
+            root.addNeighbor(wurmpleVertex);*/
+
+            /*Code mới sử dụng PokemonTree*/
+/*            PokemonTree<Pokemon> pokemonTree = new PokemonTree<>();
+
+            // Tạo và sử dụng DFS Iterator
+            Iterator<Pokemon> dfsIterator = pokemonTree.createDFSIterator(root);
+            System.out.println("DFS Traversal:");
+            while (dfsIterator.hasNext()) {
+                Vertex<Pokemon> pokemon = dfsIterator.getNext();
+                System.out.println(pokemon.getData().getName());
+//                pokemonAdapter.addData(new ArrayList<>(Collections.singletonList(pokemon.getData())));
+            }
+
+            // Tạo và sử dụng BFS Iterator
+            Iterator<Pokemon> bfsIterator = pokemonTree.createBFSIterator(root);
+            System.out.println("BFS Traversal:");
+            while (bfsIterator.hasNext()) {
+                Vertex<Pokemon> pokemon = bfsIterator.getNext();
+                System.out.println(pokemon.getData().getName());
+//                pokemonAdapter.addData(new ArrayList<>(Collections.singletonList(pokemon.getData())));
+            }*/
         }
         else {
             pokemonAdapter.setData(PokeApiFetcher.pokemonHomeDemoData);
