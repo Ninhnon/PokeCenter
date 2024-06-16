@@ -128,7 +128,7 @@ public class VenderOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapter
 
                     handler.post(() -> {
 
-                            order.acceptState();
+                            order.acceptState(); //update state
                             mOrders.remove(pos);
                             notifyItemRemoved(pos);
 
@@ -156,7 +156,7 @@ public class VenderOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapter
 
                 executor.execute(() -> {
                     handler.post(() -> {
-                    order.cancelState();
+                    order.cancelState(); //update state
                     mOrders.remove(pos);
                     notifyItemRemoved(pos);
                     Toast.makeText(mContext, "Order status changed", Toast.LENGTH_SHORT)

@@ -494,7 +494,6 @@ public class AddProductActivity extends AppCompatActivity implements OptionRecyc
                             downloadUrlTask.addOnSuccessListener(new OnSuccessListener<Uri>() {
                                 @Override
                                 public void onSuccess(Uri uri) {
-                                    Toast.makeText(AddProductActivity.this, "Update Option Image Successful", Toast.LENGTH_SHORT).show();
                                     mImageUri = uri;
                                     //currentAccount.setAvatar(String.valueOf(uri));
                                 }

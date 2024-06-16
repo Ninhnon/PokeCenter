@@ -199,17 +199,19 @@ public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapte
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 Handler handler = new Handler(Looper.getMainLooper());
 
-
+                String newStatus = "Cancel";
                 executor.execute(() -> {
-
                     boolean isSuccess = true;
-
-                    new FirebaseSupportVender().pushNotificationForPackaged(order.getId(), true);
-
+                    try {
+                        new FirebaseSupportVender().ChangeOrderStatus(order.getId(), newStatus);
+                        new FirebaseSupportVender().pushNotificationForPackaged(order.getId(), true);
+                    } catch (IOException e) {
+                        isSuccess = false;
+                    }
                     boolean finalIsSuccess = isSuccess;
                     handler.post(() -> {
                         if (finalIsSuccess) {
-
+                            order.setStatus(newStatus);
                             mOrders.remove(pos);
                             notifyItemRemoved(pos);
 
@@ -217,15 +219,13 @@ public class ReceiveOrderAdapter extends RecyclerView.Adapter<ReceiveOrderAdapte
                                     .show();
 
                             progressBar.setVisibility(View.GONE);
-
                         } else {
-
                             packagedBtn.setVisibility(View.VISIBLE);
+                            canceledBtn.setVisibility(View.VISIBLE);
                             progressBar.setVisibility(View.GONE);
 
                             Toast.makeText(mContext, "Failed to connect server!", Toast.LENGTH_SHORT)
                                     .show();
-
                         }
                     });
                 });
