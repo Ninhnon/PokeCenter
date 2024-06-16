@@ -787,6 +787,24 @@ public class FirebaseSupportCustomer {
 
         client.newCall(request).execute();
     }
+    public void changeStatusNotification(String notificationId, String status) throws IOException {
+        OkHttpClient client = new OkHttpClient();
+
+        Map<String, Boolean> updateData = new HashMap<>();
+        updateData.put("read", true);
+
+        String jsonData = new Gson().toJson(updateData);
+
+        RequestBody body = RequestBody.create(jsonData, JSON);
+
+        String emailWithCurrentUser = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+        Request request = new Request.Builder()
+                .url(urlDb + "customers/" + emailWithCurrentUser.replace(".", ",") + "/notifications/" + notificationId + ".json")
+                .patch(body)
+                .build();
+
+        client.newCall(request).execute();
+    }
 
     public VoucherInfo fetchingVoucherInfo(String voucherCode) throws IOException {
         VoucherInfo voucherInfo = new VoucherInfo();
